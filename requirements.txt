@@ -1,0 +1,8 @@
+Flask
+gunicorn
+requests
+pydub
+python-telegram-bot==13.15
+google-auth
+google-api-python-client
+google-cloud-speech
