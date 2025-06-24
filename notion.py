@@ -14,7 +14,7 @@ headers = {
 }
 
 
-def create_idea(content, ptype , create_date, strUrl, status="未处理"):
+def create_idea(content, ptype, strUrl , create_date, status="未处理"):
     print("start create_task")
 
     url = "https://api.notion.com/v1/pages"
