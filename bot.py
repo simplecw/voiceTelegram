@@ -41,7 +41,7 @@ def voice_handler(update: Update, context):
     filename = f"{user}_{timestamp}.ogg"
     filepath = os.path.join(SAVE_DIR, filename)
 
-    file.download_to_drive(filepath)
+    file.download(custom_path=filepath)
     print(f"✅ 已保存语音文件: {filepath}")
 
     # 对语音进行识别，获得文字信息
