@@ -14,7 +14,7 @@ headers = {
 }
 
 
-def create_idea(content, ptype , create_date, status="未处理"):
+def create_idea(content, ptype , create_date, strUrl, status="未处理"):
     print("start create_task")
 
     url = "https://api.notion.com/v1/pages"
@@ -45,6 +45,11 @@ def create_idea(content, ptype , create_date, status="未处理"):
     if create_date:
         properties["创建日期"] = {
             "date": {"start": create_date}
+        }
+
+    if strUrl:
+        properties["attatch"] = {
+            "url": strUrl
         }
 
 
