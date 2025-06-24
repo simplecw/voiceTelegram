@@ -1,7 +1,7 @@
 from flask import Flask
 import google_drive_tools
 from telegram import Bot, Update
-from telegram.ext import ContextTypes, Dispatcher, MessageHandler, filters
+from telegram.ext import ContextTypes, Dispatcher, MessageHandler, Filters
 import os
 from notion import create_idea, create_task
 from pydub import AudioSegment
@@ -19,6 +19,7 @@ GOOGLE_SPEECH_API_KEY = os.getenv("GOOGLE_SPEECH_API_KEY")
 
 app = Flask(__name__)
 dispatcher = Dispatcher(bot=bot, update_queue=None, workers=1)
+dispatcher.add_handler(MessageHandler(Filters.voice, voice_handler))
 
 def voice_handler(update: Update, context):
     print("start handle_voice ============================")
@@ -43,8 +44,6 @@ def voice_handler(update: Update, context):
     reply_text = message
 
     update.message.reply_text(reply_text)
-
-dispatcher.add_handler(MessageHandler(filters.VOICE, voice_handler))
 
 @app.route("/telegram", methods=["POST"])
 def webhook():
