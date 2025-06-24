@@ -1,5 +1,5 @@
 from flask import Flask
-from google_drive_tools import main as drive_func
+from google_drive_tools import main
 
 app = Flask(__name__)
 
