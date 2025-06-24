@@ -47,7 +47,7 @@ def voice_handler(update: Update, context):
     # 对语音进行识别，获得文字信息
     message = convert_ogg_to_text(filepath)
 
-    save_message(message)
+    save_message(message, filepath)
 
     # 合成语音回复
     reply_text = message
@@ -76,26 +76,26 @@ def convert_ogg_to_text(filepath):
     return main_convert_ogg_to_text_google(filepath)
 
 
-def save_message(text):
+def save_message(text, filepath):
+    strUrl = google_drive_tools.upload_file(filepath)
     if text.startswith("灵感"):
         create_idea(
             content=text[2:],
             ptype="灵感",
+            strUrl=strUrl,
             create_date=datetime.today().strftime('%Y-%m-%d')
         )
     elif text.startswith("任务"):
         create_task(
             name=text[2:],
             status="Not Started",
-            # tags=["API", "Documentation"],
-            # catalog_group="catalog_group",
-            # catalog="catalog",
-            # due_date=datetime.today().strftime('%Y-%m-%d'),
+            strUrl=strUrl
         )
     else:
         create_idea(
             content=text[2:],
             ptype="未识别",
+            strUrl=strUrl,
             create_date=datetime.today().strftime('%Y-%m-%d')
         )
 
