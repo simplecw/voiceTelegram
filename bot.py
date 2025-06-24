@@ -27,12 +27,12 @@ def voice_handler(update: Update, context):
     voice = update.message.voice
 
     # 获取语音文件信息并下载
-    file = await context.bot.get_file(voice.file_id)
+    file = context.bot.get_file(voice.file_id)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{user}_{timestamp}.ogg"
     filepath = os.path.join(SAVE_DIR, filename)
 
-    await file.download_to_drive(filepath)
+    file.download_to_drive(filepath)
     print(f"✅ 已保存语音文件: {filepath}")
 
     # 对语音进行识别，获得文字信息
