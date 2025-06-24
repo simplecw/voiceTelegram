@@ -93,7 +93,7 @@ def save_message(text, filepath):
         )
     else:
         create_idea(
-            content=text[2:],
+            content=text,
             ptype="未识别",
             strUrl=strUrl,
             create_date=datetime.today().strftime('%Y-%m-%d')
