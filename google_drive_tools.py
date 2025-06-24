@@ -9,15 +9,15 @@ FOLDER_ID = '1XG3tm9UoYhXOTxkDSQ8GUMDN0JxC_hcn'
 
 
 def upload_file(file_path, folder_id=FOLDER_ID):
-    credentials, _ = default(scopes=["https://www.googleapis.com/auth/drive"])
-
-    # 创建 Drive 客户端
-    service = build("drive", "v3", credentials=credentials)
-
-    file_name = os.path.basename(file_path)
-    mime_type = mimetypes.guess_type(file_path)[0]
-
     try:
+        credentials, _ = default(scopes=["https://www.googleapis.com/auth/drive"])
+
+        # 创建 Drive 客户端
+        service = build("drive", "v3", credentials=credentials)
+
+        file_name = os.path.basename(file_path)
+        mime_type = mimetypes.guess_type(file_path)[0]
+
         file_metadata = {
             'name': file_name,
             'parents': [folder_id]
