@@ -17,6 +17,16 @@ BAIDU_API_KEY = os.getenv("BAIDU_API_KEY")
 BAIDU_SECRET_KEY = os.getenv("BAIDU_SECRET_KEY")
 GOOGLE_SPEECH_API_KEY = os.getenv("GOOGLE_SPEECH_API_KEY")
 
+# 开启日志输出
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+
+# 设置你希望保存文件的目录
+SAVE_DIR = "saved_voice"
+os.makedirs(SAVE_DIR, exist_ok=True)
+
 app = Flask(__name__)
 dispatcher = Dispatcher(bot=bot, update_queue=None, workers=1)
 
