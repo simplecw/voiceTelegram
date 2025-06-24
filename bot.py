@@ -5,7 +5,8 @@ app = Flask(__name__)
 
 @app.route("/run-drive", methods=["GET"])
 def call_drive():
-    return drive_func()
+    result = drive_func()
+    return result if result else "No output from drive_func"
 
 @app.route("/", methods=["GET"])
 def home():
