@@ -42,7 +42,3 @@ def upload_file(file_path, folder_id=FOLDER_ID):
 
 def main():
     upload_file("saved_voice/Simple_20250524_193820.ogg")
-
-
-if __name__ == '__main__':
-    main()
