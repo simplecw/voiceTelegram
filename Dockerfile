@@ -2,7 +2,7 @@
 FROM python:3.11
 
 # 安装 ffmpeg（用于 pydub 处理 ogg）
-RUN apt-get update && apt-get install -y ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg && apt-get clean
 
 WORKDIR /app
 COPY . .
