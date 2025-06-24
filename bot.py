@@ -1,7 +1,7 @@
 from flask import Flask
 import google_drive_tools
 from telegram import Bot, Update
-from telegram.ext import ApplicationBuilder, ContextTypes, Dispatcher, MessageHandler, filters
+from telegram.ext import ContextTypes, Dispatcher, MessageHandler, filters
 from speech import transcribe
 import os
 from notion import create_idea, create_task
