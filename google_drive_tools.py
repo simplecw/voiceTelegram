@@ -30,13 +30,27 @@ def upload_file(file_path, folder_id=FOLDER_ID):
             media_body=media,
             fields='id, name'
         ).execute()
+
+        file_id = uploaded_file['id']
+
+        # 设置公开权限
+        service.permissions().create(
+            fileId=file_id,
+            body={
+                'role': 'reader',
+                'type': 'anyone'
+            }
+        ).execute()
+    
+        # 构造可公开访问链接
+        public_url = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
         
         print(f"Uploaded: {uploaded_file['name']} (ID: {uploaded_file['id']})")
-        return "Upload success"
+        return "Upload success：public_url"
     except Exception as e:
         print("Upload failed:", e)
         return f"Upload failed: {e}"
 
 def main():
-    return upload_file("saved_voice/Simple_20250524_193820.ogg")
+    return upload_file("saved_voice/Simple_20250524_194040.ogg")
     # return "upload_file start"
