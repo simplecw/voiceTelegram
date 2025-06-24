@@ -38,5 +38,5 @@ def upload_file(file_path, folder_id=FOLDER_ID):
         return f"Upload failed: {e}"
 
 def main():
-    return upload_file("saved_voice/Simple_20250524_193820.ogg")
-    # return "upload_file start"
+    upload_file("saved_voice/Simple_20250524_193820.ogg")
+    return "upload_file start"
