@@ -1,9 +1,19 @@
+# Flask Web 框架
 Flask
-gunicorn
-requests
-pydub
+
+# Telegram Bot API (13.x 使用同步代码，适配 Dispatcher)
 python-telegram-bot==13.15
+
+# Google Speech-to-Text 和 Google Drive API
+google-cloud-speech
+google-api-python-client
 google-auth
 google-auth-httplib2
-google-api-python-client
-google-cloud-speech
+
+# pydub 语音处理（ogg 转 wav）
+pydub
+
+# 基础功能（requests、日期、json、os、base64 不需要额外安装）
+requests
+
+gunicorn
