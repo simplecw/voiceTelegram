@@ -5,7 +5,7 @@ import mimetypes
 import os
 
 # 要上传到的文件夹 ID
-FOLDER_ID = 'https://drive.google.com/drive/folders/1XG3tm9UoYhXOTxkDSQ8GUMDN0JxC_hcn'
+FOLDER_ID = '1XG3tm9UoYhXOTxkDSQ8GUMDN0JxC_hcn'
 
 def upload_file(file_path, folder_id=FOLDER_ID):
     try:
