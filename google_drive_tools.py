@@ -46,7 +46,7 @@ def upload_file(file_path, folder_id=FOLDER_ID):
         public_url = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
         
         print(f"Uploaded: {uploaded_file['name']} (ID: {uploaded_file['id']})")
-        return "Upload success：{public_url}"
+        return f"Upload success：{public_url}"
     except Exception as e:
         print("Upload failed:", e)
         return f"Upload failed: {e}"
