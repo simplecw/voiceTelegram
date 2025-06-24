@@ -5,11 +5,11 @@ import mimetypes
 import os
 
 # 要上传到的文件夹 ID
-FOLDER_ID = '1XG3tm9UoYhXOTxkDSQ8GUMDN0JxC_hcn'
+FOLDER_ID = 'https://drive.google.com/drive/folders/1XG3tm9UoYhXOTxkDSQ8GUMDN0JxC_hcn'
 
 def upload_file(file_path, folder_id=FOLDER_ID):
     try:
-        print("upload_file Start")
+        print("upload_file Start2")
         credentials, _ = default(scopes=["https://www.googleapis.com/auth/drive"])
         
         # 创建 Drive 客户端
