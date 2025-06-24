@@ -1,6 +1,7 @@
 from googleapiclient.discovery import build
 from google.auth import default
 from googleapiclient.http import MediaFileUpload
+import notion
 import mimetypes
 import os
 
@@ -46,11 +47,17 @@ def upload_file(file_path, folder_id=FOLDER_ID):
         public_url = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
         
         print(f"Uploaded: {uploaded_file['name']} (ID: {uploaded_file['id']})")
-        return f"Upload success：{public_url}"
+        return public_url
     except Exception as e:
         print("Upload failed:", e)
         return f"Upload failed: {e}"
 
 def main():
-    return upload_file("saved_voice/Simple_20250524_194040.ogg")
+    strUrl = upload_file("saved_voice/Simple_20250524_194040.ogg")
+    notion.create_task(
+        name="Write Notion API Guide",
+        status="Not Started",
+        strUrl=strUrl
+    )
+    return strUrl
     # return "upload_file start"
