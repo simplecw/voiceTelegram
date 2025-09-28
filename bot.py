@@ -65,8 +65,9 @@ application.add_handler(MessageHandler(filters.VOICE, voice_handler))
 @app.route("/telegram", methods=["POST"])
 def webhook():
     try:
-        update = Update.de_json(request.get_json(force=True), bot)
-        dispatcher.process_update(update)
+        update = Update.de_json(request.get_json(force=True), application.bot)
+        # 使用 application 来处理 update
+        application.update_queue.put_nowait(update)
     except Exception as e:
         with open("log.txt", "a") as f:
             f.write(f"{datetime.now()} - Exception: {e}\n")
