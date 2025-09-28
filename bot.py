@@ -11,6 +11,9 @@ import requests
 import base64
 import json
 
+from dotenv import load_dotenv
+load_dotenv()
+
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 bot = Bot(token=TELEGRAM_TOKEN)
 BAIDU_API_KEY = os.getenv("BAIDU_API_KEY")
