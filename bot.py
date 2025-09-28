@@ -7,6 +7,7 @@ import google_drive_tools
 from notion import create_idea, create_task
 import requests
 from dotenv import load_dotenv
+import asyncio
 
 load_dotenv()
 
@@ -42,14 +43,14 @@ async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 application.add_handler(MessageHandler(filters.VOICE, voice_handler))
 
-# ================== Webhook ==================
+# ================== Flask Webhook ==================
 @app.route("/telegram", methods=["POST"])
 def webhook():
     try:
         data = request.get_json(force=True)
         update = Update.de_json(data, application.bot)
-        import asyncio
-        asyncio.run(application.process_update(update))
+        # 使用 asyncio.create_task 来处理异步 update
+        asyncio.create_task(application.process_update(update))
     except Exception as e:
         with open("log.txt", "a") as f:
             f.write(f"{datetime.now()} - Exception: {e}\n")
@@ -92,6 +93,16 @@ def save_message(text, filepath):
     else:
         create_idea(content=text, ptype="未识别", strUrl=strUrl, create_date=datetime.today().strftime('%Y-%m-%d'))
 
-# ================== Flask 启动 ==================
+# ================== 启动 ==================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    async def main():
+        await application.initialize()
+        await application.start()
+        print("✅ Telegram Bot started")
+        # 运行 Flask
+        from threading import Thread
+        Thread(target=lambda: app.run(host="0.0.0.0", port=5000)).start()
+        # 阻塞等待 Bot 停止
+        await application.idle()
+
+    asyncio.run(main())
