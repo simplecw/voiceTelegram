@@ -64,8 +64,13 @@ application.add_handler(MessageHandler(filters.VOICE, voice_handler))
 # ================== Flask Webhook ==================
 @app.route("/telegram", methods=["POST"])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), application.bot)
-    application.update_queue.put(update)
+    try:
+        update = Update.de_json(request.get_json(force=True), bot)
+        dispatcher.process_update(update)
+    except Exception as e:
+        with open("log.txt", "a") as f:
+            f.write(f"{datetime.now()} - Exception: {e}\n")
+        return "Internal Server Error", 500
     return "ok"
 
 @app.route("/run-drive", methods=["GET"])
