@@ -216,3 +216,5 @@ def recognize_baidu(wav_path, token):
     res = requests.post(url, headers=headers, data=json.dumps(data))
     return res.json()
 
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
