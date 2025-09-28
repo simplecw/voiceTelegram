@@ -1,71 +1,41 @@
-from flask import Flask, request
-import os, logging, json, base64
+import os
+import json
+import base64
+import logging
+import requests
 from datetime import datetime
 from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
-import google_drive_tools
+from telegram.ext import (
+    ApplicationBuilder,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 from notion import create_idea, create_task
-import requests
+import google_drive_tools
 from dotenv import load_dotenv
-import asyncio
 
 load_dotenv()
 
+# ================== 配置 ==================
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 GOOGLE_SPEECH_API_KEY = os.getenv("GOOGLE_SPEECH_API_KEY")
-
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
 
 SAVE_DIR = "saved_voice"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-app = Flask(__name__)
-
-# ================== Telegram Bot ==================
-application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-
-async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user.first_name or "unknown_user"
-    voice = update.message.voice
-    file = await context.bot.get_file(voice.file_id)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{user}_{timestamp}.ogg"
-    filepath = os.path.join(SAVE_DIR, filename)
-    await file.download_to_drive(custom_path=filepath)
-    print(f"✅ Saved voice file: {filepath}")
-
-    message = convert_ogg_to_text(filepath)
-    save_message(message, filepath)
-    await update.message.reply_text(message)
-
-application.add_handler(MessageHandler(filters.VOICE, voice_handler))
-
-# ================== Flask Webhook ==================
-@app.route("/telegram", methods=["POST"])
-def webhook():
-    try:
-        data = request.get_json(force=True)
-        update = Update.de_json(data, application.bot)
-        # 使用 asyncio.create_task 来处理异步 update
-        asyncio.create_task(application.process_update(update))
-    except Exception as e:
-        with open("log.txt", "a") as f:
-            f.write(f"{datetime.now()} - Exception: {e}\n")
-        return "Internal Server Error", 500
-    return "ok"
-
-@app.route("/", methods=["GET"])
-def home():
-    return "Flask + Telegram webhook running!"
+# ================== 日志 ==================
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
 
 # ================== 工具函数 ==================
 def convert_ogg_to_text(filepath):
     api_key = GOOGLE_SPEECH_API_KEY
     with open(filepath, "rb") as audio_file:
         audio_content = base64.b64encode(audio_file.read()).decode("utf-8")
+
     url = f"https://speech.googleapis.com/v1/speech:recognize?key={api_key}"
     headers = {"Content-Type": "application/json"}
     data = {
@@ -77,32 +47,61 @@ def convert_ogg_to_text(filepath):
         },
         "audio": {"content": audio_content},
     }
+
     response = requests.post(url, headers=headers, data=json.dumps(data))
     if response.status_code == 200:
         result = response.json()
         if "results" in result:
             return result["results"][0]["alternatives"][0]["transcript"]
-    return "无法识别语音"
+    return "未识别内容"
 
 def save_message(text, filepath):
     strUrl = google_drive_tools.upload_file(filepath)
     if text.startswith("灵感"):
-        create_idea(content=text[2:], ptype="灵感", strUrl=strUrl, create_date=datetime.today().strftime('%Y-%m-%d'))
+        create_idea(content=text[2:], ptype="灵感", strUrl=strUrl,
+                    create_date=datetime.today().strftime('%Y-%m-%d'))
     elif text.startswith("任务"):
         create_task(name=text[2:], status="Not Started", strUrl=strUrl)
     else:
-        create_idea(content=text, ptype="未识别", strUrl=strUrl, create_date=datetime.today().strftime('%Y-%m-%d'))
+        create_idea(content=text, ptype="未识别", strUrl=strUrl,
+                    create_date=datetime.today().strftime('%Y-%m-%d'))
 
-# ================== 启动 ==================
+# ================== Telegram Handler ==================
+async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        user = update.effective_user.first_name or "unknown_user"
+        voice = update.message.voice
+        file = await context.bot.get_file(voice.file_id)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{user}_{timestamp}.ogg"
+        filepath = os.path.join(SAVE_DIR, filename)
+
+        await file.download_to_drive(custom_path=filepath)
+        logging.info(f"已保存语音文件: {filepath}")
+
+        message = convert_ogg_to_text(filepath)
+        save_message(message, filepath)
+        await update.message.reply_text(message)
+    except Exception as e:
+        logging.error(f"voice_handler error: {e}")
+
+# ================== 启动 Bot ==================
+async def main():
+    application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    application.add_handler(MessageHandler(filters.VOICE, voice_handler))
+
+    # 启动 webhook
+    # 这里假设你已经用 Nginx 代理到 443 并有证书
+    WEBHOOK_URL = "https://simplechen.xyz/telegram"  # 替换成你的域名
+    await application.initialize()
+    await application.start_webhook(listen="0.0.0.0",
+                                    port=5000,
+                                    url_path="telegram",
+                                    webhook_url=WEBHOOK_URL)
+    logging.info("Telegram Bot started (webhook mode)")
+    await application.idle()
+
 if __name__ == "__main__":
-    async def main():
-        await application.initialize()
-        await application.start()
-        print("✅ Telegram Bot started")
-        # 运行 Flask
-        from threading import Thread
-        Thread(target=lambda: app.run(host="0.0.0.0", port=5000)).start()
-        # 阻塞等待 Bot 停止
-        await application.idle()
-
+    import asyncio
     asyncio.run(main())
