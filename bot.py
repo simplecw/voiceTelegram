@@ -1,30 +1,18 @@
 from flask import Flask, request
-import google_drive_tools
-from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder,
-    ContextTypes,
-    MessageHandler,
-    filters,
-)
-import os
-from notion import create_idea, create_task
-from pydub import AudioSegment
-import logging
+import os, logging, json, base64
 from datetime import datetime
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+import google_drive_tools
+from notion import create_idea, create_task
 import requests
-import base64
-import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-BAIDU_API_KEY = os.getenv("BAIDU_API_KEY")
-BAIDU_SECRET_KEY = os.getenv("BAIDU_SECRET_KEY")
 GOOGLE_SPEECH_API_KEY = os.getenv("GOOGLE_SPEECH_API_KEY")
 
-# 日志
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
@@ -39,73 +27,44 @@ app = Flask(__name__)
 application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
 async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("start handle_voice ============================")
     user = update.effective_user.first_name or "unknown_user"
     voice = update.message.voice
-
-    # 获取语音文件信息并下载
     file = await context.bot.get_file(voice.file_id)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{user}_{timestamp}.ogg"
     filepath = os.path.join(SAVE_DIR, filename)
-
     await file.download_to_drive(custom_path=filepath)
-    print(f"✅ 已保存语音文件: {filepath}")
+    print(f"✅ Saved voice file: {filepath}")
 
-    # 语音识别
     message = convert_ogg_to_text(filepath)
     save_message(message, filepath)
-
     await update.message.reply_text(message)
-
 
 application.add_handler(MessageHandler(filters.VOICE, voice_handler))
 
-# ================== Flask Webhook ==================
+# ================== Webhook ==================
 @app.route("/telegram", methods=["POST"])
 def webhook():
     try:
-        update = Update.de_json(request.get_json(force=True), application.bot)
-        # 使用 application 来处理 update
-        application.update_queue.put_nowait(update)
+        data = request.get_json(force=True)
+        update = Update.de_json(data, application.bot)
+        import asyncio
+        asyncio.run(application.process_update(update))
     except Exception as e:
         with open("log.txt", "a") as f:
             f.write(f"{datetime.now()} - Exception: {e}\n")
         return "Internal Server Error", 500
     return "ok"
 
-@app.route("/run-drive", methods=["GET"])
-def call_drive():
-    result = google_drive_tools.main()
-    return result if result else "No output from drive_func"
-
 @app.route("/", methods=["GET"])
 def home():
-    return "Cloud Run is working! Use /run-main or /run-drive to trigger."
+    return "Flask + Telegram webhook running!"
 
 # ================== 工具函数 ==================
 def convert_ogg_to_text(filepath):
-    return main_convert_ogg_to_text_google(filepath)
-
-def save_message(text, filepath):
-    strUrl = google_drive_tools.upload_file(filepath)
-    if text.startswith("灵感"):
-        create_idea(
-            content=text[2:], ptype="灵感", strUrl=strUrl, create_date=datetime.today().strftime('%Y-%m-%d')
-        )
-    elif text.startswith("任务"):
-        create_task(name=text[2:], status="Not Started", strUrl=strUrl)
-    else:
-        create_idea(
-            content=text, ptype="未识别", strUrl=strUrl, create_date=datetime.today().strftime('%Y-%m-%d')
-        )
-
-# ================== Google 语音识别 ==================
-def main_convert_ogg_to_text_google(filepath):
     api_key = GOOGLE_SPEECH_API_KEY
     with open(filepath, "rb") as audio_file:
         audio_content = base64.b64encode(audio_file.read()).decode("utf-8")
-
     url = f"https://speech.googleapis.com/v1/speech:recognize?key={api_key}"
     headers = {"Content-Type": "application/json"}
     data = {
@@ -117,26 +76,22 @@ def main_convert_ogg_to_text_google(filepath):
         },
         "audio": {"content": audio_content},
     }
-
     response = requests.post(url, headers=headers, data=json.dumps(data))
     if response.status_code == 200:
         result = response.json()
         if "results" in result:
-            for r in result["results"]:
-                print("识别结果:", r["alternatives"][0]["transcript"])
-                return r["alternatives"][0]["transcript"]
-        else:
-            print("没有识别结果")
+            return result["results"][0]["alternatives"][0]["transcript"]
+    return "无法识别语音"
+
+def save_message(text, filepath):
+    strUrl = google_drive_tools.upload_file(filepath)
+    if text.startswith("灵感"):
+        create_idea(content=text[2:], ptype="灵感", strUrl=strUrl, create_date=datetime.today().strftime('%Y-%m-%d'))
+    elif text.startswith("任务"):
+        create_task(name=text[2:], status="Not Started", strUrl=strUrl)
     else:
-        print("请求失败:", response.status_code, response.text)
+        create_idea(content=text, ptype="未识别", strUrl=strUrl, create_date=datetime.today().strftime('%Y-%m-%d'))
 
-# ================== 百度语音识别（保留） ==================
-# ... 你原来的百度语音函数保持不变 ...
-
-# ================== 启动 ==================
+# ================== Flask 启动 ==================
 if __name__ == "__main__":
-    import asyncio
-    # Flask + telegram webhook
-    loop = asyncio.get_event_loop()
-    loop.create_task(application.start())
     app.run(host="0.0.0.0", port=5000)
