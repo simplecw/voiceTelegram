@@ -16,6 +16,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 GOOGLE_SPEECH_API_KEY = os.getenv("GOOGLE_SPEECH_API_KEY")
 
 SAVE_DIR = "saved_voice"
+OGG_FILE_URL_ROOT = "https://simplechen.xyz/voices/"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 # 日志
@@ -50,7 +51,8 @@ def convert_ogg_to_text(filepath):
     return "未识别内容"
 
 def save_message(text, filepath):
-    strUrl = google_drive_tools.upload_file(filepath)
+    # strUrl = google_drive_tools.upload_file(filepath)
+    strUrl = filepath
     if text.startswith("灵感"):
         create_idea(content=text[2:], ptype="灵感", strUrl=strUrl,
                     create_date=datetime.today().strftime('%Y-%m-%d'))
@@ -75,7 +77,7 @@ async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.info(f"已保存语音文件: {filepath}")
 
         message = convert_ogg_to_text(filepath)
-        save_message(message, filepath)
+        save_message(message, OGG_FILE_URL_ROOT + filename)
         await update.message.reply_text(message)
     except Exception as e:
         logging.error(f"voice_handler error: {e}")
