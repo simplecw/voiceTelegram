@@ -9,6 +9,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filte
 from notion import create_idea, create_task
 import google_drive_tools
 from dotenv import load_dotenv
+from pydub import AudioSegment
 
 load_dotenv()
 
