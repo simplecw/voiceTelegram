@@ -48,7 +48,16 @@ def convert_ogg_to_text(filepath):
         result = resp.json()
         if "results" in result:
             return result["results"][0]["alternatives"][0]["transcript"]
-    return "未识别内容" + str(resp.status_code)
+    else:
+        try:
+            error_info = resp.json().get("error", {})
+            code = error_info.get("code", resp.status_code)
+            message = error_info.get("message", "Unknown error")
+            status = error_info.get("status", "")
+            return f"识别失败 [{code} - {status}]：{message}"
+        except Exception as e:
+            # 如果返回不是 JSON
+            return f"识别失败 {resp.status_code}：无法解析错误信息 ({e}) - 原始返回: {resp.text}"
 
 def save_message(text, filepath):
     # strUrl = google_drive_tools.upload_file(filepath)
