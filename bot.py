@@ -14,6 +14,8 @@ load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 GOOGLE_SPEECH_API_KEY = os.getenv("GOOGLE_SPEECH_API_KEY")
+BAIDU_API_KEY = os.getenv("BAIDU_API_KEY")
+BAIDU_SECRET_KEY = os.getenv("BAIDU_SECRET_KEY")
 
 SAVE_DIR = "saved_voice"
 OGG_FILE_URL_ROOT = "https://simplechen.xyz/voices/"
@@ -27,6 +29,9 @@ logging.basicConfig(
 
 # ---------------- 工具函数 ----------------
 def convert_ogg_to_text(filepath):
+    main_convert_ogg_to_text_baidu(filepath)
+    
+def main_convert_ogg_to_text_google(filepath):
     api_key = GOOGLE_SPEECH_API_KEY
     with open(filepath, "rb") as f:
         audio_content = base64.b64encode(f.read()).decode("utf-8")
@@ -105,6 +110,78 @@ def main():
         url_path="telegram",
         webhook_url=WEBHOOK_URL
     )
+
+# 百度语音转文字服务
+def main_convert_ogg_to_text_baidu(filepath):
+    # ========== Step 0: 用户参数 ==========
+    API_KEY = BAIDU_API_KEY
+    SECRET_KEY = BAIDU_SECRET_KEY
+    OGG_FILE = filepath
+    WAV_FILE = 'voice.wav'
+
+    # 转换音频
+    convert_ogg_to_wav_baidu(OGG_FILE, WAV_FILE)
+
+    # 获取token
+    token = get_token_baidu(API_KEY, SECRET_KEY)
+
+    # 调用识别接口
+    result = recognize_baidu(WAV_FILE, token)
+
+    # 输出结果
+    if result.get("err_no") == 0:
+        print("识别结果：", result["result"][0])
+    else:
+        print("识别失败：", result)
+
+    # 可选：删除中间文件
+    os.remove(WAV_FILE)
+
+
+# ========== Step 1: 转换 OGG 到 WAV ==========
+def convert_ogg_to_wav_baidu(ogg_path, wav_path):
+    audio = AudioSegment.from_ogg(ogg_path)
+    audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)  # 16kHz, mono, 16bit
+    audio.export(wav_path, format='wav')
+
+
+# ========== Step 2: 获取 access_token ==========
+def get_token_baidu(api_key, secret_key):
+    token_url = 'https://openapi.baidu.com/oauth/2.0/token'
+    params = {
+        'grant_type': 'client_credentials',
+        'client_id': api_key,
+        'client_secret': secret_key
+    }
+    res = requests.get(token_url, params=params)
+    return res.json().get("access_token")
+
+
+# ========== Step 3: 调用百度语音识别 API ==========
+def recognize_baidu(wav_path, token):
+    with open(wav_path, 'rb') as f:
+        speech_data = f.read()
+
+    speech_base64 = base64.b64encode(speech_data).decode('utf-8')
+    length = len(speech_data)
+
+    data = {
+        "format": "wav",
+        "rate": 16000,
+        "channel": 1,
+        "cuid": "telegram-bot-device",
+        "token": token,
+        "speech": speech_base64,
+        "len": length,
+        "dev_pid": 1537  # 普通话输入法模型
+    }
+
+    url = "https://vop.baidu.com/server_api"
+    headers = {"Content-Type": "application/json"}
+    res = requests.post(url, headers=headers, data=json.dumps(data))
+    return res.json()
+
+
 
 if __name__ == "__main__":
     main()
